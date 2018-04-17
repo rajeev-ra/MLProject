@@ -32,6 +32,7 @@ class Correlation(object):
 
     def plot(self, X = None, Y = None):
         corr = self.data.corr()
+        print(corr)
         f, ax = plt.subplots(figsize=(10, 8))
         sns.heatmap(corr, mask=np.zeros_like(corr, dtype=np.bool), cmap=sns.diverging_palette(220, 10, as_cmap=True),
                     square=True, ax=ax)
