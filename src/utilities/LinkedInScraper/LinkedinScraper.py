@@ -4,7 +4,6 @@ from selenium.common.exceptions import NoSuchElementException
 
 emailId = ""
 psswrd = ""
-testUsr = "https://www.linkedin.com/in/vijay-srikanth-28a90231/"
 profileListFilePath = "./../../../data/LinkedIn/ProfileLinksBengaluru.txt"
 
 def GetDriver(eml, pss):
@@ -124,7 +123,7 @@ def GetProfileInfo(driver, url):
         driver.execute_script("window.scrollTo(0, 2000);")
         time.sleep(2)
         W = e.find_elements_by_class_name("pv-skill-category-entity__name")    #("pv-skill-category-entity__top-skill")
-        print(len(W))
+        #print(len(W))
         for w in W:
             techData = GetTechnologies(w)
             if techData is not None:
@@ -140,6 +139,18 @@ def GetProfileInfo(driver, url):
 
 driver = GetDriver(emailId, psswrd)
 #GenerateProfileLinks(driver, profileListFilePath)
-print(GetProfileInfo(driver, testUsr))
-time.sleep(1)
+file = open(profileListFilePath, 'r')
+urls = file.readlines()
+for i in range(4, len(urls)):
+    url = urls[i]
+    time.sleep(1)
+    jsonFile = open("./../../../data/LinkedIn/ProfileData/" + str(1 + i) + ".json", "w")
+    try:
+        data = GetProfileInfo(driver, url.strip())
+        if data is not None:
+            jsonFile.write(str(data))
+    except:
+        print(i, url.strip())
+    jsonFile.close()
+file.close()
 driver.close()
