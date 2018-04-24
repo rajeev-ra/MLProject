@@ -136,21 +136,165 @@ def GetProfileInfo(driver, url):
     return data
 
 
+def SaveProfileJsonData(emailId, psswrd, profileListFilePath):
+    driver = GetDriver(emailId, psswrd)
+    #GenerateProfileLinks(driver, profileListFilePath)
+    file = open(profileListFilePath, 'r')
+    urls = file.readlines()
+    for i in range(0, len(urls)):
+        url = urls[i]
+        time.sleep(1)
+        jsonFile = open("./../../../data/LinkedIn/ProfileData/" + str(1 + i) + ".json", "w")
+        try:
+            data = GetProfileInfo(driver, url.strip())
+            if data is not None:
+                jsonFile.write(str(data))
+        except:
+            print(i, url.strip())
+        jsonFile.close()
+    file.close()
+    driver.close()
 
-driver = GetDriver(emailId, psswrd)
-#GenerateProfileLinks(driver, profileListFilePath)
-file = open(profileListFilePath, 'r')
-urls = file.readlines()
-for i in range(4, len(urls)):
-    url = urls[i]
-    time.sleep(1)
-    jsonFile = open("./../../../data/LinkedIn/ProfileData/" + str(1 + i) + ".json", "w")
+
+def WriteCsvCell(csvFile, data, last = False):
+    csvFile.write(str(data).replace(",", ";"))
+    if last is True:
+        csvFile.write("\n")
+    else:
+        csvFile.write(",")
+
+
+def WriteCsvHeader(csvFile):
+    csvFile.write("Name,Url,Raw-Degree,Degree,College,College-Type,Degree-Year,TCS-Start,TCS-End,TCS-Duration,TCS-Position,TCS-Exp,Technology,TCS-Fresher,Next-Company\n")
+
+def IsMBA(degree):
+    if ("mba" in degree) or ("m.b.a" in degree):
+        return True
+    if ("master" in degree) and ("business" in degree):
+        return True
+    return False
+
+def IsMTech(degree):
+    if ("m.e" in degree) or ("mtech" in degree) or ("m.tech" in degree):
+        return True
+    if ("master" in degree) and (("tech" in degree) or ("eng" in degree)):
+        return True
+    return False
+
+def IsBTech(degree):
+    if ("b.e" in degree) or ("btech" in degree) or ("b.tech" in degree):
+        return True
+    if ("bachelor" in degree) and (("tech" in degree) or ("eng" in degree)):
+        return True
+    return False
+
+def GetDegreeShort(degree):
+    ldegree = degree.lower()
+    if IsMBA(ldegree):
+        return "MBA"
+    elif IsMTech(ldegree):
+        return "M.Tech"
+    elif IsBTech(ldegree):
+        return "B.Tech"
+    else:
+        return "Other"
+
+def GetDuration(yearMont):
+    yearMon = yearMont.split(" ")
     try:
-        data = GetProfileInfo(driver, url.strip())
-        if data is not None:
-            jsonFile.write(str(data))
+        if 4 == len(yearMon):
+            return float(yearMon[0]) + (float(yearMon[2]) / 12)
+        elif "mo" in yearMon[1]:
+            return (float(yearMon[0]) / 12)
+        else:
+            return int(yearMon[0])
     except:
-        print(i, url.strip())
-    jsonFile.close()
-file.close()
-driver.close()
+        return yearMont
+
+def GetIfFresher(data, tcsData):
+    start = int(data["Education"]["EndTime"])
+    ends = tcsData["To"].split(" ")
+    end = 0
+    if "Present" == ends[len(ends) - 1]:
+        end = 2018
+    else:
+        end = int(ends[len(ends) - 1])
+    if (end - start) < 2:
+        return "Yes"
+    else:
+        return "No"
+
+def GetTCSData(data):
+    exData = data["Experiences"]
+    for i in range(len(exData)):
+        companyName = exData[i]["Company"].lower()
+        if "tata" in companyName or "tcs" in companyName or "t.c.s" in companyName:
+            return exData[i]
+    return None
+
+def GetExperience1(data, tcsData):
+    start = int(data["Education"]["EndTime"])
+    ends = tcsData["To"].split(" ")
+    end = 0
+    if "Present" == ends[len(ends) - 1]:
+        end = 2018
+    else:
+        end = int(ends[len(ends) - 1])
+    return str(end - start)
+
+def GetNextCompany(data, tcsData):
+    exData = data["Experiences"]
+    for i in range(len(exData)):
+        if tcsData == exData[i] and i > 0:
+            return exData[i-1]["Company"]
+    return "None"
+
+def WriteTCSDataInCSV(csvFile, data):
+    tcsData = GetTCSData(data)
+    if tcsData is None:
+        WriteCsvCell(csvFile, "")
+        WriteCsvCell(csvFile, "")
+        WriteCsvCell(csvFile, "")
+        WriteCsvCell(csvFile, "")
+        WriteCsvCell(csvFile, "")
+        WriteCsvCell(csvFile, "")
+        WriteCsvCell(csvFile, "")
+        WriteCsvCell(csvFile, "", True)
+    else:
+        WriteCsvCell(csvFile, tcsData["From"])
+        WriteCsvCell(csvFile, tcsData["To"])
+        WriteCsvCell(csvFile, GetDuration(tcsData["Duration"]))
+        WriteCsvCell(csvFile, tcsData["Title"])
+        WriteCsvCell(csvFile, GetExperience1(data, tcsData))
+        WriteCsvCell(csvFile, "")
+        WriteCsvCell(csvFile, GetIfFresher(data, tcsData))
+        WriteCsvCell(csvFile, GetNextCompany(data, tcsData), True)
+
+
+def WriteCsvData(csvFile, data):
+    WriteCsvCell(csvFile, data["Name"])
+    WriteCsvCell(csvFile, data["Url"])
+    WriteCsvCell(csvFile, data["Education"]["Degree"])
+    WriteCsvCell(csvFile, GetDegreeShort(data["Education"]["Degree"]))
+    WriteCsvCell(csvFile, data["Education"]["College"])
+    WriteCsvCell(csvFile, "")
+    WriteCsvCell(csvFile, data["Education"]["EndTime"])
+    WriteTCSDataInCSV(csvFile, data)
+
+
+def CreateCsvFromJson(csvPath):
+    csvFile = open(csvPath, "w")
+    WriteCsvHeader(csvFile)
+    for i in range(0, 1000):
+        try:
+            jsonFile = open("./../../../data/LinkedIn/ProfileData/" + str(1 + i) + ".json", "r")
+            jsonstr = jsonFile.read()
+            if 10 < len(jsonstr):
+                data = eval(jsonstr)
+                WriteCsvData(csvFile, data)
+        except FileNotFoundError:
+            break
+    csvFile.close()
+
+CreateCsvFromJson("./../../../data/LinkedIn/Data.csv")
+#SaveProfileJsonData(emailId, psswrd, profileListFilePath)
