@@ -18,10 +18,15 @@ clf.fit(X, Y)
 
 y = clf.predict(X)
 
+s = 0
+d = 0
 for a, b in zip(Y, y):
     if a == b:
-        print("Same", a)
+        s = s+1
+        #print("Same", a)
     else:
-        print("Different", a, b)
+        d = d+1
+        #print("Different", a, b)
 
+print (s, " Same  ||  ", d, " Different")
 print(clf.score(X, Y))
