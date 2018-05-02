@@ -4,6 +4,7 @@ import seaborn as sns
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LinearRegression
 
 data = pd.read_excel("./../../data/LinkedIn/FinalData.xlsx")
 
@@ -12,6 +13,7 @@ X = np.column_stack((data["DEGREE-OTHER"], data["DEGREE-BACH"], data["DEGREE-MAS
                      data["LEADER"], data["MGR"], data["HR"], data["SE"]))
 
 Y = list(data['1-2'])
+
 
 clf = RandomForestClassifier(n_estimators=2)
 clf.fit(X, Y)
@@ -30,3 +32,10 @@ for a, b in zip(Y, y):
 
 print (s, " Same  ||  ", d, " Different")
 print(clf.score(X, Y))
+
+"""
+Y = list(data['DURATION'])
+model = LinearRegression(normalize=True)
+model.fit(X, Y)
+print(model.score(X,Y))
+"""
