@@ -72,14 +72,20 @@ Y = l.Predict(X)
 
 r = 0
 w = 0
+n = 0
 
+print("================")
+print("Wrong predictions")
+print("-----------------")
+print("Correct\t  Predicted")
 for y, t in zip(Y, YT):
-    if l.IsCorrect(t, y):
+    if l.errStr == y:
+        n = n + 1
+    elif l.IsCorrect(t, y):
         r = r + 1
     else:
         w = w + 1
-
-    print(t, "   ", y)
+        print("",t, "\t\t", y)
 
 print("================")
-print(r, "Correct  || ", w, "Wrong")
+print(r, "Correct  || ", w, "Wrong  || ", n, "Cannot predict")
